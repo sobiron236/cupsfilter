@@ -9,6 +9,7 @@ use IO::File;
 use File::Temp;
 use SQLShell;
 use DBI;
+use feature "switch";
 
 #use File::Temp qw/ :seekable /;
 #require File::Temp;
@@ -94,7 +95,7 @@ $dbh->options(	"CupsLog",	# имя базы данных
 				"ansi");	# терминал
 eval {
 	$dbh->connect();
-	$dbh->_doexec("SET CLIENT_ENCODING TO 'WIN1251'");
+	#$dbh->_doexec("SET CLIENT_ENCODING TO 'WIN1251'");
 };
 if ($@){
 	print STDERR $@,"\n";
@@ -113,13 +114,54 @@ if ($@){
 	if ($result[0]){
 		@result =get_fp_pdfname_and_make($TAGS_DATA{"jobID"},$TAGS_DATA{"user"},$TAGS_DATA{"jobTitle"},$TAGS_DATA{"TMP_FILENAME"});
 		$TAGS_DATA{"FP_PDF_NAME"}=$result[1];
+	}else{
 		save_debug_msg ($result[1]) if ($DEBUG || !$result[0]);
-		save_data2base($REPORT_ID);
 	}
+	save_data2base($REPORT_ID);
+	
 }
 exit 0;
 
 #--------------------------------------------------------------------------------------------------
+
+sub save_data2base{
+	#Args: REPORT_ID
+	#Returns: nothing;
+	my($rep_id) =@_;
+	my $k;
+   	foreach $k (keys %TAGS_DATA) {
+   		$TAGS_DATA{$k} = digit2utf ($TAGS_DATA{$k}) if ($TAGS_DATA{$k} =~ /(\d{1,4};;)+/);# Переведем в UTF8
+   		my $v = $TAGS_DATA{$k};
+       	given (lc($k)){
+       		when ("document_level") {
+       			$dbh->just_do("set_doc_level",$rep_id,$v);
+			}
+			when ("copy_number"){
+				$dbh->just_do("set_copy_number",$rep_id,$v);
+			}
+			when ("punkt"){
+				$dbh->just_do("set_punkt",$rep_id,$v);
+			}
+			when ("executor_fio"){
+				$dbh->just_do("set_executor_fio",$rep_id,$v);
+			}
+			when ("printed_fio"){
+				$dbh->just_do("set_printed_fio",$rep_id,$v);
+			}
+			when ("inv_number"){
+				$dbh->just_do("set_inv_number",$rep_id,$v);
+			}
+			when (/recivers_\d{1}/){
+				$dbh->just_do("set_recivers",$rep_id,$v);
+			}
+			when (/add_info\d{1}/){
+				$dbh->just_do("set_add_info",$rep_id,$v);
+			}
+   		}
+   	}
+}
+
+
 sub digit2utf{
 	#Arg: digit_str example 1069;;1090;;1086;;32;;1084;;1086;;1081;;32;;1076;;1086;;1082;;1091;;1084;;1077;;1085;;1090;;44;;32;;1089;;1090;;1088;;46;;321
 	#Returns: wide char string
