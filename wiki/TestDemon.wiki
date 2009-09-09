@@ -47,4 +47,4 @@ if(clientsUID.contains(client))
 Которая выполняет полученные от клиента команды
 
 В тестовом демоне написана заглушка которая для отладки возвращает список принтеров
-_"Testprinter1,TestPrinter2,TestPrinter3,TestPrinter4_
+_Testprinter1,TestPrinter2,TestPrinter3,TestPrinter4_
